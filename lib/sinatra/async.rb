@@ -71,9 +71,17 @@ module Sinatra #:nodoc:
       # request.
       def body(*args, &blk)
         super
-        request.env['async.callback'][
-          [response.status, response.headers, response.body]
-        ] if respond_to?(:__async_callback)
+        request.env['async.callback'][response.finish] if respond_to?(:__async_callback)
+      end
+      
+      def halt(*res)
+        if respond_to?(:__async_callback)
+          # responds and processes throw :halt, arg
+          invoke { super }
+          request.env['async.callback'][response.finish]
+        else
+          super
+        end
       end
     end
 
